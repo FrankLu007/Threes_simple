@@ -5,6 +5,7 @@
 #include <map>
 #include <type_traits>
 #include <algorithm>
+#include <random>
 #include "board.h"
 #include "action.h"
 
@@ -62,21 +63,67 @@ protected:
 class rndenv : public random_agent {
 public:
 	rndenv(const std::string& args = "") : random_agent("name=random role=environment " + args),
-		space({ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }), popup(0, 9) {}
+		space({ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }), last(-1),
+		u({12, 13, 14, 15}), d({0, 1, 2, 3}), l({3, 7, 11, 15}), r({0, 4, 8, 12}) {bag.clear();}
 
 	virtual action take_action(const board& after) {
-		std::shuffle(space.begin(), space.end(), engine);
-		for (int pos : space) {
-			if (after(pos) != 0) continue;
-			board::cell tile = popup(engine) ? 1 : 2;
-			return action::place(pos, tile);
+		board::cell tile;
+		if(bag.empty())
+		{
+			bag.push_back(3);
+			bag.push_back(2);
+			bag.push_back(1);
+			std::shuffle(bag.begin(), bag.end(), engine);
+		}
+		tile = bag.back();
+		bag.pop_back();
+		if(last == -1) 
+		{
+			std::shuffle(space.begin(), space.end(), engine);
+			for (int pos : space) {
+				if (after(pos) != 0) continue;
+				return action::place(pos, tile);
+			}
+		}
+		else if(!last) 
+		{
+			std::shuffle(u.begin(), u.end(), engine);
+			for (int pos : u) {
+				if (after(pos) != 0) continue;
+				return action::place(pos, tile);
+			}
+		}
+		else if(last == 1) 
+		{
+			std::shuffle(r.begin(), r.end(), engine);
+			for (int pos : r) {
+				if (after(pos) != 0) continue;
+				return action::place(pos, tile);
+			}
+		}
+		else if(last == 2) 
+		{
+			std::shuffle(d.begin(), d.end(), engine);
+			for (int pos : d) {
+				if (after(pos) != 0) continue;
+				return action::place(pos, tile);
+			}
+		}
+		else 
+		{
+			std::shuffle(l.begin(), l.end(), engine);
+			for (int pos : l) {
+				if (after(pos) != 0) continue;
+				return action::place(pos, tile);
+			}
 		}
 		return action();
 	}
-
+	int last;
+	std::vector<int> bag;
 private:
 	std::array<int, 16> space;
-	std::uniform_int_distribution<int> popup;
+	std::array<int, 4> u, d, l, r;
 };
 
 /**
@@ -85,18 +132,19 @@ private:
  */
 class player : public random_agent {
 public:
-	player(const std::string& args = "") : random_agent("name=dummy role=player " + args),
-		opcode({ 0, 1, 2, 3 }) {}
+	player(const std::string& args = "") : random_agent("name=0516310 role=player " + args),
+		opcode({ 3, 2, 1, 0}) {}
 
 	virtual action take_action(const board& before) {
-		std::shuffle(opcode.begin(), opcode.end(), engine);
+		//std::shuffle(opcode.begin(), opcode.end(), engine);
 		for (int op : opcode) {
 			board::reward reward = board(before).slide(op);
-			if (reward != -1) return action::slide(op);
+			if (reward != -1) return action::slide(last = op);
 		}
+		
 		return action();
 	}
-
+	int last;
 private:
 	std::array<int, 4> opcode;
 };

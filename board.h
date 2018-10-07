@@ -53,7 +53,7 @@ public:
 	 */
 	reward place(unsigned pos, cell tile) {
 		if (pos >= 16) return -1;
-		if (tile != 1 && tile != 2) return -1;
+		if (tile != 1 && tile != 2 && tile != 3) return -1;
 		operator()(pos) = tile;
 		return 0;
 	}
@@ -76,26 +76,25 @@ public:
 		board prev = *this;
 		reward score = 0;
 		for (int r = 0; r < 4; r++) {
-			auto& row = tile[r];
-			int top = 0, hold = 0;
-			for (int c = 0; c < 4; c++) {
-				int tile = row[c];
-				if (tile == 0) continue;
-				row[c] = 0;
-				if (hold) {
-					if (tile == hold) {
-						row[top++] = ++tile;
-						score += (1 << tile);
-						hold = 0;
-					} else {
-						row[top++] = hold;
-						hold = tile;
+			for (int c = 1; c < 4; c++) {
+				if(!tile[r][c]) continue;
+				if(tile[r][c-1])
+				{
+					if(tile[r][c-1] + tile[r][c] == 3)
+					{
+						tile[r][c-1] = 3;
+						tile[r][c] = 0;
+						score += 3;
 					}
-				} else {
-					hold = tile;
+					else if(tile[r][c] != 1 && tile[r][c] != 2 && tile[r][c] == tile[r][c-1])
+					{
+						tile[r][c-1]++;
+						tile[r][c] = 0;
+						score += tile[r][c-1];
+					}
 				}
+				else {tile[r][c-1] = tile[r][c]; tile[r][c] = 0;}
 			}
-			if (hold) tile[r][top] = hold;
 		}
 		return (*this != prev) ? score : -1;
 	}
@@ -159,17 +158,19 @@ public:
 
 public:
 	friend std::ostream& operator <<(std::ostream& out, const board& b) {
+		int convert[] = {0, 1, 2, 3, 6, 12, 24, 48, 96, 192, 384, 768, 1536, 3072, 6144};
 		out << "+------------------------+" << std::endl;
 		for (auto& row : b.tile) {
 			out << "|" << std::dec;
-			for (auto t : row) out << std::setw(6) << ((1 << t) & -2u);
+
+			for (auto t : row) out << std::setw(6) << convert[t];
 			out << "|" << std::endl;
 		}
 		out << "+------------------------+" << std::endl;
 		return out;
 	}
 
-private:
+//private:
 	grid tile;
 	data attr;
 };
