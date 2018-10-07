@@ -133,16 +133,17 @@ private:
 class player : public random_agent {
 public:
 	player(const std::string& args = "") : random_agent("name=0516310 role=player " + args),
-		opcode({ 3, 2, 1, 0}) {}
+		opcode({0, 1, 2, 3}) {}
 
 	virtual action take_action(const board& before) {
 		//std::shuffle(opcode.begin(), opcode.end(), engine);
+		int sol = 0;
+		long long rew = -1;
 		for (int op : opcode) {
 			board::reward reward = board(before).slide(op);
-			if (reward != -1) return action::slide(last = op);
+			if (reward > rew) {sol = op; rew = reward;}
 		}
-		
-		return action();
+		return action::slide(last = sol);
 	}
 	int last;
 private:
