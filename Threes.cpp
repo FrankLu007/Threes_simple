@@ -17,11 +17,11 @@
 #include "statistic.h"
 
 int main(int argc, const char* argv[]) {
-	std::cout << "2048-Demo: ";
+	std::cout << "Threes-Demo: ";
 	std::copy(argv, argv + argc, std::ostream_iterator<const char*>(std::cout, " "));
 	std::cout << std::endl << std::endl;
 
-	size_t total = 1000, block = 0, limit = 0;
+	size_t total = 10000, block = 0, limit = 0;
 	std::string play_args, evil_args;
 	std::string load, save;
 	bool summary = false;
@@ -64,9 +64,12 @@ int main(int argc, const char* argv[]) {
 
 		stat.open_episode(play.name() + ":" + evil.name());
 		episode& game = stat.back();
+		play.last = evil.last = -1;
+		evil.bag.clear();
 		while (true) {
 			agent& who = game.take_turns(play, evil);
 			action move = who.take_action(game.state());
+			if(&who == &play) evil.last = play.last;
 			if (game.apply_action(move) != true) break;
 			if (who.check_for_win(game.state())) break;
 		}
